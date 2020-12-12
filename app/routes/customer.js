@@ -2,20 +2,31 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db')
 const Customer = require('../models/Customer')
+const User = require('../models/User')
 
-// Get all Users
+// Get all Customers
 
 
-router.get('/', async (req, res) => {
+router.get('/user/:id', async (req, res) => {
     try {
-        const customer = await Customer.findAll()
-        res.json(customer)
+        Customer.belongsTo(User, {targetKey: 'id', foreignKey: 'addedBy'})
+        const customer = await Customer.findAll({
+            include: [{
+                model: User,
+                where: {
+                    id: req.params.id
+                },        
+                attributes: {exclude: ['password','phone','createdAt','updatedAt']}
+            },
+        ],
+        })
+        res.json({success: true, message: 'Success', data: customer})
     } catch (error) {
-        console.log(error)
+        res.status(500).json({success: false, message: 'Server Error ' + error.message})
     }
 })
 
-// Add a user
+// Add a Customer
 
 router.post('/add', async (req, res) => {
     try {
@@ -26,6 +37,7 @@ router.post('/add', async (req, res) => {
         email: data.email,
         phone: data.phone,
         password: data.password,
+        addedBy: data.addedBy
     })
     console.log(create)
     res.send('created user')
@@ -34,7 +46,7 @@ router.post('/add', async (req, res) => {
     }
 })
 
-// Edit User 
+// Edit Customer 
 router.put('/edit/:id', async (req, res) => {
     try {
         const id = req.params.id;
@@ -43,10 +55,27 @@ router.put('/edit/:id', async (req, res) => {
             {firstName: data.firstName, lastName: data.lastName, email: data.email, phone: data.phone},
             {where: {id: id}}
             )
-        console.log(updated)
+            res.json({success: true, message: `${data.firstName}'s profile udpated.`})
     } catch (error) {
-        console.log(error)
+        res.status(500).json({success: false, message: 'Server Error ' + error.message})
     }
 })
+
+// Delete Customer 
+router.delete('/delete/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+        await Customer.destroy({
+            where: {
+                id: id
+            }
+        })
+        res.json({success: true, message: `Deleted Customer from database`})
+    } catch (error) {
+        res.status(500).json({success: false, message: 'Server Error ' + error.message})
+    }
+})
+
+
 
 module.exports = router;

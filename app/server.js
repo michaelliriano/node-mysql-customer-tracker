@@ -10,6 +10,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use('/users', require('./routes/users'))
 app.use('/customers', require('./routes/customer'))
+app.use('/appointments', require('./routes/appointments'))
 
 db
   .authenticate()
